@@ -10,162 +10,58 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
 <style>
-body { font-family: Arial; margin:0; background:#111; color:white; }
-.hidden{display:none;}
-
-input,button,textarea{
-  width:90%; padding:10px; margin:5px;
-  border-radius:8px; border:none;
-}
-
-button{background:#c9a84c; color:black; font-weight:bold;}
-
-.card{
-  margin:10px; padding:10px;
-  border-radius:10px;
-}
-
-.red{background:#c0392b;}
-.yellow{background:#d4ac0d; color:black;}
-.green{background:#1e8449;}
-
-.top{background:#000; padding:10px;}
+  body { font-family: Arial; margin:0; background:#111; color:white; }
+  .hidden{display:none;}
+  input,button,textarea{
+    width:90%; padding:10px; margin:5px;
+    border-radius:8px; border:none;
+  }
+  button{background:#c9a84c; color:black; font-weight:bold; cursor:pointer;}
+  .card{ margin:10px; padding:15px; border-radius:10px; position: relative;}
+  
+  /* Color Coding */
+  .red { background: #c0392b; border-left: 8px solid #ff4d4d; }
+  .yellow { background: #d4ac0d; color: black; border-left: 8px solid #f1c40f; }
+  .green { background: #1e8449; border-left: 8px solid #2ecc71; }
+  
+  .top{background:#000; padding:15px; border-bottom: 1px solid #333;}
+  .days-badge { font-weight: bold; font-size: 0.9em; display: block; margin-top: 5px;}
 </style>
 </head>
 
 <body>
 
-<!-- LOGIN -->
 <div id="loginPage">
-  <h2>Login</h2>
-  <input id="email" placeholder="Email">
-  <input id="password" type="password" placeholder="Password">
-  <button onclick="login()">Login</button>
+  <div style="text-align:center; padding:50px 0;">
+    <h2>Tailor Manager Login</h2>
+    <input id="email" placeholder="Email">
+    <input id="password" type="password" placeholder="Password">
+    <button onclick="login()">Login</button>
+  </div>
 </div>
 
-<!-- APP -->
 <div id="appPage" class="hidden">
+  <div class="top">
+    <b>Tailor Manager Pro</b>
+    <button onclick="logout()" style="float:right; width:auto; padding:5px 10px; margin:0;">Logout</button>
+  </div>
 
-<div class="top">
-  Tailor App
-  <button onclick="logout()" style="float:right;">Logout</button>
-</div>
+  <div style="padding:10px;">
+    <h3>Add New Order</h3>
+    <input id="name" placeholder="Customer Name">
+    <input id="phone" placeholder="Phone Number" type="tel">
+    <input id="date" type="date">
+    <textarea id="notes" placeholder="Measurement Details / Notes"></textarea>
+    <button onclick="addCustomer()">Save Order</button>
+  </div>
 
-<div>
-  <input id="name" placeholder="Name">
-  <input id="phone" placeholder="Phone">
-  <input id="date" type="date">
-  <textarea id="notes" placeholder="Notes"></textarea>
-  <button onclick="addCustomer()">Add</button>
-</div>
-
-<input id="search" placeholder="Search..." oninput="render()">
-
-<div id="list"></div>
-
+  <div style="padding:10px;">
+    <input id="search" placeholder="Search by name or phone..." oninput="render()">
+  </div>
+  <div id="list"></div>
 </div>
 
 <script>
-/* 🔥 YOUR FIREBASE CONFIG HERE */
-const firebaseConfig = {
-  apiKey: "PASTE",
-  authDomain: "PASTE",
-  projectId: "PASTE",
-  storageBucket: "PASTE",
-  messagingSenderId: "PASTE",
-  appId: "PASTE"
-};
-
-firebase.initializeApp(firebaseConfig);
-
-const auth = firebase.auth();
-const db = firebase.firestore();
-
-let data = [];
-
-auth.onAuthStateChanged(user=>{
-  if(user){
-    loginPage.classList.add("hidden");
-    appPage.classList.remove("hidden");
-    load();
-  }else{
-    loginPage.classList.remove("hidden");
-    appPage.classList.add("hidden");
-  }
-});
-
-function login(){
-  auth.signInWithEmailAndPassword(email.value,password.value)
-  .catch(e=>alert(e.message));
-}
-
-function logout(){
-  auth.signOut();
-}
-
-function addCustomer(){
-  db.collection("customers").add({
-    name:name.value,
-    phone:phone.value,
-    date:date.value,
-    notes:notes.value,
-    created:Date.now()
-  });
-}
-
-function load(){
-  db.collection("customers")
-  .orderBy("created","desc")
-  .onSnapshot(snap=>{
-    data=[];
-    snap.forEach(d=>{
-      data.push({id:d.id,...d.data()});
-    });
-    render();
-  });
-}
-
-function getColor(days){
-  if(days<=3) return "red";
-  if(days<=10) return "yellow";
-  return "green";
-}
-
-function render(){
-  let list=document.getElementById("list");
-  list.innerHTML="";
-
-  let searchVal = search.value?.toLowerCase() || "";
-
-  data.forEach(d=>{
-    let days = Math.ceil((new Date(d.date)-new Date())/(1000*60*60*24));
-
-    if(!d.name.toLowerCase().includes(searchVal) &&
-       !d.phone.includes(searchVal)) return;
-
-    list.innerHTML+=`
-    <div class="card ${getColor(days)}">
-      <b>${d.name}</b><br>
-      📞 ${d.phone}<br>
-      📅 ${d.date} (${days} days)<br>
-      📝 ${d.notes}<br><br>
-      <button onclick="del('${d.id}')">Delete</button>
-    </div>`;
-  });
-}
-
-function del(id){
-  db.collection("customers").doc(id).delete();
-}
-<script type="module">
-  // Import the functions you need from the SDKs you need
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
-  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-analytics.js";
-  // TODO: Add SDKs for Firebase products that you want to use
-  // https://firebase.google.com/docs/web/setup#available-libraries
-
-  // Your web app's Firebase configuration
-  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
   const firebaseConfig = {
     apiKey: "AIzaSyBVoy-vsAx28i0dML_Km8VGEqwfvPJx8sY",
     authDomain: "alteration-cce0d.firebaseapp.com",
@@ -176,9 +72,100 @@ function del(id){
     measurementId: "G-TQ6195PST4"
   };
 
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-  const analytics = getAnalytics(app);
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+
+  let data = [];
+
+  auth.onAuthStateChanged(user => {
+    if (user) {
+      document.getElementById("loginPage").classList.add("hidden");
+      document.getElementById("appPage").classList.remove("hidden");
+      load();
+    } else {
+      document.getElementById("loginPage").classList.remove("hidden");
+      document.getElementById("appPage").classList.add("hidden");
+    }
+  });
+
+  function login() {
+    const e = document.getElementById("email").value;
+    const p = document.getElementById("password").value;
+    auth.signInWithEmailAndPassword(e, p).catch(err => alert(err.message));
+  }
+
+  function logout() { auth.signOut(); }
+
+  function addCustomer() {
+    const n = document.getElementById("name").value;
+    const d = document.getElementById("date").value;
+    if(!n || !d) return alert("Please enter Name and Date");
+
+    db.collection("customers").add({
+      name: n,
+      phone: document.getElementById("phone").value,
+      date: d, // "YYYY-MM-DD" format sorts correctly as string or date
+      notes: document.getElementById("notes").value,
+      created: Date.now()
+    }).then(() => {
+      document.getElementById("name").value = "";
+      document.getElementById("phone").value = "";
+      document.getElementById("notes").value = "";
+      document.getElementById("date").value = "";
+    });
+  }
+
+  function load() {
+    // Sorting by "date" (ascending) puts nearest dates at the top
+    db.collection("customers")
+      .orderBy("date", "asc")
+      .onSnapshot(snap => {
+        data = [];
+        snap.forEach(doc => data.push({ id: doc.id, ...doc.data() }));
+        render();
+      });
+  }
+
+  function getColor(days) {
+    if (days <= 3) return "red";
+    if (days <= 10) return "yellow";
+    return "green";
+  }
+
+  function render() {
+    const list = document.getElementById("list");
+    list.innerHTML = "";
+    const searchVal = document.getElementById("search").value.toLowerCase();
+
+    data.forEach(d => {
+      // Calculate day difference
+      const targetDate = new Date(d.date);
+      const today = new Date();
+      today.setHours(0,0,0,0); 
+      const diffTime = targetDate - today;
+      const days = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      if (!d.name.toLowerCase().includes(searchVal) && !d.phone.includes(searchVal)) return;
+
+      list.innerHTML += `
+        <div class="card ${getColor(days)}">
+          <div style="font-size:1.2em;"><b>${d.name}</b></div>
+          <div>📞 ${d.phone}</div>
+          <div>📝 ${d.notes}</div>
+          <span class="days-badge">📅 Delivery: ${d.date} (${days < 0 ? 'Overdue!' : days + ' days left'})</span>
+          <br>
+          <button onclick="del('${d.id}')" style="background:rgba(255,255,255,0.2); color:white; width:auto; font-size:0.8em;">Delete</button>
+        </div>`;
+    });
+  }
+
+  function del(id) {
+    if(confirm("Complete/Delete this order?")) {
+      db.collection("customers").doc(id).delete();
+    }
+  }
 </script>
+
 </body>
-</html>
+</html
